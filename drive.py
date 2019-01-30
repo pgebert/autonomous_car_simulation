@@ -22,6 +22,8 @@ from PIL import Image
 from flask import Flask
 #input output
 from io import BytesIO
+# Load model
+from model import Model
 
 
 
@@ -29,6 +31,9 @@ from io import BytesIO
 sio = socketio.Server()
 #our flask (web) app
 app = Flask(__name__)
+
+model = Model()
+model.loadModel()
 
 #registering event handler for the server
 @sio.on('telemetry')
@@ -38,6 +43,9 @@ def telemetry(sid, data):
         steering_angle = 0
         # The current throttle of the car, how hard to push peddle
         throttle = 1.0
+
+        image = Image.open(BytesIO(base64.b64decode(data["image"])))
+        steering_angle = model.predict(image, preloaded=True)
 
         send_control(steering_angle, throttle)
 
