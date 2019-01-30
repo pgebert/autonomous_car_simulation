@@ -20,6 +20,7 @@ import copy
 from PIL import Image
 
 from dataloader import SimulationDataset
+from data_utils import get_weights
 from logger import Logger
 
 # Surpress traceback in case of user interrupt
@@ -36,14 +37,23 @@ class Net(nn.Module):
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 40)
+        self.fc1 = nn.Linear(16 * 47 * 47, 40)
         self.fc2 = nn.Linear(40, 20)
         self.fc3 = nn.Linear(20, 1)
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
+        # x = self.pool(F.relu(self.conv1(x)))
+        # x = self.pool(F.relu(self.conv2(x)))
+        # print(x.size())
+        x = F.relu(self.conv1(x))
+        # print(x.size())
+        x = self.pool(x) 
+        # print(x.size())
+        x = F.relu(self.conv2(x))
+        # print(x.size())
+        x = self.pool(x) 
+        # print(x.size())
+        x = x.view(-1, 16 * 47 * 47)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
@@ -83,18 +93,21 @@ class Model():
 
     def loadData(self):       
         
-        # TODO: Balance dataset
         trainset = SimulationDataset("train", transforms=transforms.Compose([
-                transforms.RandomResizedCrop(35),
-                transforms.RandomHorizontalFlip(),
+                transforms.Resize(200),
+                transforms.CenterCrop(200),
+                # transforms.RandomResizedCrop(200),
+                # transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, shuffle=True, num_workers=4)
+        weights = get_weights(trainset)
+        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
+        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
-                transforms.Resize(35),
-                transforms.CenterCrop(35),
+                transforms.Resize(200),
+                transforms.CenterCrop(200),
                 transforms.ToTensor(),
                 transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
@@ -234,8 +247,8 @@ class Model():
         print('Starting Prediction')
 
         composed=transforms.Compose([
-            transforms.Resize(35),
-            transforms.CenterCrop(35),
+            transforms.Resize(200),
+            transforms.CenterCrop(200),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
