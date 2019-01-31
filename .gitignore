@@ -1,6 +1,8 @@
 # Data 
 /IMG
 *.pth
+log.json
+plot.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

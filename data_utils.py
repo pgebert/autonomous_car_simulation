@@ -14,6 +14,7 @@ def get_weights(dataset):
     weights_zeros = weights_zeros / (weights_zeros + weights_others)  
     weights_others = weights_others / (weights_zeros + weights_others) 
     # Weight for each sample                               
-    weights = [ weights_zeros if target == 0 else weights_others for target in targets]
+    # weights = [ weights_zeros if target == 0 else weights_others for target in targets]
+    weights = [ 0.01 if target == 0 else 1.0 for target in targets]
 
     return weights
