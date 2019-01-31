@@ -1,4 +1,4 @@
-# Autonomous Car Simulation
+# Autonomous Car Simulation (in progress)
 
 [![project in progress](https://img.shields.io/badge/state-in%20progress-blue.svg)]()
 
@@ -9,7 +9,7 @@ If you are interested in the project or if you want to contribute some ideas or 
 
 ## Udacity Self-Driving Car Simulator
 
-The [Udacity Self-Driving Car Simulator](git@github.com:pgebert/autonomous_car_simulation.git) allows to record simualted front and side cameras of the car together with the control data like steering angle, speed, throttle, etc during the training mode. In thesutonomous mode it enables the computer to control the car via event based communication.
+The [Udacity Self-Driving Car Simulator](https://github.com/udacity/self-driving-car-sim) allows to record simualted front and side cameras of the car together with the control data like steering angle, speed, throttle, etc during the training mode. In thesutonomous mode it enables the computer to control the car via event based communication.
 
 ![Udacity Seld-Driving Car Simulator](docs/simulation.png)
 
