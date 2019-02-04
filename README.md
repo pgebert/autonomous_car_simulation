@@ -18,3 +18,9 @@ The [Udacity Self-Driving Car Simulator](https://github.com/udacity/self-driving
 Implemented in [PyTorch](https://pytorch.org/) using Python.
 
 ![Network architecture](docs/network.png)
+
+## Development
+
+Run `model.py` to run the training. The best performing model on the testset is saved automatically. 
+
+To use the autonomous driving mode of the simulator, run `drive.py` after the simulator was started and set in autonomous mode.
