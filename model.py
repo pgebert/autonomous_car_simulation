@@ -72,11 +72,11 @@ class Model():
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
-        cfg.batch_size = 2
+        cfg.batch_size = 5
         cfg.test_rate = 1
         cfg.test_epochs = 1
         cfg.train_epochs = 200
-        cfg.optimizer = 'SGD'
+        cfg.optimizer = 'sgd'
         cfg.cuda = True
 
         self.cfg = cfg
@@ -139,19 +139,20 @@ class Model():
         #set train mode
         self.net.train()
 
-        criterion = nn.L1Loss()
+        criterion = nn.MSELoss()
 
         if self.cfg.optimizer == 'adam':
-            optimizer = optim.Adam(self.net.parameters(), lr=0.001)
+            optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
         elif self.cfg.optimizer == 'adadelta':
             optimizer = optim.Adadelta(selfnet.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
         else:
-            optimizer = optim.SGD(self.net.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0, dampening=0.0)
+            optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.0, dampening=0.0)
 
 
         for epoch in range(self.cfg.train_epochs):  # loop over the dataset multiple times
 
-            running_loss = 0.0
+            train_loss, running_loss = 0, 0
+
             for i, data in enumerate(self.trainloader, 0):
                 # get the inputs
                 inputs, labels = data
@@ -177,25 +178,27 @@ class Model():
                 loss.backward()
                 optimizer.step()
 
+                running_loss += loss.item()
+
                 # print statistics
-                running_loss += loss.data.item()
-                if i % 10 == 9:    # print every 2000 mini-batches
-                    self.log.logLoss((epoch+1, running_loss / 10))
-                    print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 10))
-                    running_loss = 0.0
+                if i % 100 == 99:    # print every 100 mini-batches
+                    self.log.logLoss((epoch+1, running_loss / (i+1)))
+                    print('[%d, %5d] loss: %.6f' % (epoch + 1, i + 1, running_loss / (i+1)))
+
+            train_loss = running_loss / len(self.trainloader) 
+            print('MSE of the network on the traintset: %.6f' % (train_loss))
 
             if ((epoch + 1) % self.cfg.test_rate == 0):
-                    # testFusion()
                     tmp_res = self.test()
                     self.log.logTest((epoch+1, tmp_res))
                     # Check test result over all splits to save best model
-                    if (tmp_res > test_res):
+                    if (tmp_res < test_res):
                         self.saveModel()
                         test_res = tmp_res
                         best_epoch = epoch+1
 
         print('Finished Training')
-        print('Best model accuracy: %d %% - in epoch: %d' % (test_res, best_epoch))
+        print('Lowest model MSE: %.6f - in epoch: %d' % (test_res, best_epoch))
 
     ########################################################################
     # Test the network on the test data
@@ -204,7 +207,8 @@ class Model():
         # set test mode
         self.net.eval()
 
-        correct, total = 0, 0
+        criterion = nn.MSELoss()
+        test_loss, running_loss = 0, 0
 
         for epoch in range(self.cfg.test_epochs):  # loop over the dataset multiple times
             for data in self.testloader:
@@ -220,16 +224,17 @@ class Model():
                     outputs = self.net(inputs)
 
                 # Compute mean squared error
-                # mse = torch.sum((labels - outputs) ** 2).item()
-                tolerance = 0.01
-                total += labels.size(0)
-                correct += ((outputs.squeeze() - labels) < tolerance).sum().item()
+                loss = criterion(outputs, labels)
+                running_loss += loss.item()
 
-        print('Accuracy of the network on the testset: %d %%' % (100 * correct / total))
+        if (self.cfg.test_epochs > 0):
+            test_loss = running_loss / (len(self.testloader) * self.cfg.test_epochs) 
+
+        print('MSE of the network on the testset: %.6f' % (test_loss))
         # set train mode
         self.net.train()
 
-        return (100 * correct / total)
+        return test_loss
 
     ########################################################################
     # Predict control tensor from image
@@ -266,7 +271,7 @@ class Model():
             outputs = self.net(inputs)
 
         print('Finished Prediction')
-        print('Control tensor: %d ' % (outputs.item()))
+        print('Control tensor: %.6f ' % (outputs.item()))
 
         # set train mode
         self.net.train()
