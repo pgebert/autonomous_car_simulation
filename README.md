@@ -24,3 +24,7 @@ Implemented in [PyTorch](https://pytorch.org/) using Python.
 Run `model.py` to run the training. The best performing model on the testset is saved automatically. 
 
 To use the autonomous driving mode of the simulator, run `drive.py` after the simulator was started and set in autonomous mode.
+
+### GPU Acceleration
+
+Switching from the CPU to the GPU is quite easy and will result in a massive speed-up. Just set the `cfg.cuda` flag in `model.py`. Make sure you installed the CUDA Framework from Nvidia. 
