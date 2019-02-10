@@ -24,10 +24,11 @@ class SimulationDataset(Dataset):
 
         self.data = pd.read_csv(csv_path, header=None)
         # First column contains the middle image paths
+        piv = int(4 / 5 * len(self.data))
         if (set == "test"):
-            self.image_paths = np.asarray(self.data.iloc[:1000, 0])
+            self.image_paths = np.asarray(self.data.iloc[:piv, 0])
         else:
-            self.image_paths = np.asarray(self.data.iloc[1000:, 0])
+            self.image_paths = np.asarray(self.data.iloc[piv:, 0])
         # Fourth column contains the steering angle
         self.targets = np.asarray(self.data.iloc[:, 3])
 
@@ -36,16 +37,20 @@ class SimulationDataset(Dataset):
          # Get image name from the pandas df
         image_path = self.image_paths[index]
         # Open image
-        image = Image.open(image_path)        
+        image = Image.open(image_path)   
+        target = self.targets[index]     
+
+        sample = {'image': image, 'target': target}
 
         # Get target value
-        target = torch.tensor(float(self.targets[index]))
+        # target = torch.tensor(float(self.targets[index]))
+
         # If the transform variable is not empty
         # then it applies the operations in the transforms with the order that it is created.
         if self.transforms is not None:
-            image = self.transforms(image)
+            sample = self.transforms(sample)
         
-        return (image, target)
+        return sample['image'], sample['target']
 
     def __len__(self):
         return len(self.image_paths)

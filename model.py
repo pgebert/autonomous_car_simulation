@@ -20,12 +20,11 @@ import copy
 from PIL import Image
 
 from dataloader import SimulationDataset
-from data_utils import get_weights
+import data_utils as du
 from logger import Logger
 
 # Surpress traceback in case of user interrupt
 signal.signal(signal.SIGINT, lambda x,y: sys.exit(0))
-
 
 ########################################################################
 # Define the network
@@ -34,13 +33,13 @@ signal.signal(signal.SIGINT, lambda x,y: sys.exit(0))
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 24, 5)
-        self.conv2 = nn.Conv2d(24, 36, 5)
-        self.conv3 = nn.Conv2d(36, 48, 5)
+        self.conv1 = nn.Conv2d(3, 24, 5, stride=(2, 2))
+        self.conv2 = nn.Conv2d(24, 36, 5, stride=(2, 2))
+        self.conv3 = nn.Conv2d(36, 48, 5, stride=(2, 2))
         self.conv4 = nn.Conv2d(48, 64, 3)
         self.conv5 = nn.Conv2d(64, 64, 3)
         self.drop = nn.Dropout(p=0.5)
-        self.fc1 = nn.Linear(64 * 100 * 100, 100)
+        self.fc1 = nn.Linear(64 * 13 * 33, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
         self.fc4 = nn.Linear(10, 1)
@@ -52,27 +51,29 @@ class Net(nn.Module):
         x = F.elu(self.conv4(x))
         x = F.elu(self.conv5(x))
         x = self.drop(x)
-        x = x.view(-1, 64 * 100 * 100)
+        x = x.view(-1, 64 * 13 * 33)
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
         x = self.fc4(x)
         return x
 
-class Model():
+class Model():    
 
     ########################################################################
     # Define configuration, log and network instance
     # ^^^^^^^^^^^^^^^^^^^^
 
     def __init__(self):
+
+        self.input_shape = (160, 320)
         
         cfg = type('', (), {})()
         cfg.log_dir = "."
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
-        cfg.batch_size = 5
+        cfg.batch_size = 100
         cfg.test_rate = 1
         cfg.test_epochs = 1
         cfg.train_epochs = 200
@@ -92,23 +93,22 @@ class Model():
 
     def loadData(self):       
         
-        trainset = SimulationDataset("train", transforms=transforms.Compose([
-                transforms.Resize(116),
-                transforms.CenterCrop(116),
-                # transforms.RandomResizedCrop(200),
-                # transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        trainset = SimulationDataset("train", transforms=transforms.Compose([                
+                # du.RandomResizedCrop(self.input_shape),
+                du.Rescale(self.input_shape),
+                du.RandomHorizontalFlip(),
+                du.ToTensor(),
+                du.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
-        weights = get_weights(trainset)
+        weights = du.get_weights(trainset)
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
         self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
+        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=4)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
-                transforms.Resize(116),
-                transforms.CenterCrop(116),
-                transforms.ToTensor(),
-                transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                du.Rescale(self.input_shape),
+                du.ToTensor(),
+                du.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
         self.testloader = torch.utils.data.DataLoader(testset, batch_size=self.cfg.batch_size, shuffle=False, num_workers=4)
 
@@ -181,7 +181,7 @@ class Model():
                 running_loss += loss.item()
 
                 # print statistics
-                if i % 100 == 99:    # print every 100 mini-batches
+                if i % 5 == 4:    # print every 5 mini-batches
                     self.log.logLoss((epoch+1, running_loss / (i+1)))
                     print('[%d, %5d] loss: %.6f' % (epoch + 1, i + 1, running_loss / (i+1)))
 
@@ -192,7 +192,7 @@ class Model():
                     tmp_res = self.test()
                     self.log.logTest((epoch+1, tmp_res))
                     # Check test result over all splits to save best model
-                    if (tmp_res < test_res):
+                    if (tmp_res < test_res or test_res == 0):
                         self.saveModel()
                         test_res = tmp_res
                         best_epoch = epoch+1
@@ -251,8 +251,8 @@ class Model():
         print('Starting Prediction')
 
         composed=transforms.Compose([
-            transforms.Resize(116),
-            transforms.CenterCrop(116),
+            transforms.Resize(self.input_shape),
+            transforms.CenterCrop(self.input_shape),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
