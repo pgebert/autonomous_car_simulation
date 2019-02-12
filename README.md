@@ -25,6 +25,10 @@ Run `model.py` to run the training. The best performing model on the testset is 
 
 To use the autonomous driving mode of the simulator, run `drive.py` after the simulator was started and set in autonomous mode.
 
+### CPU Usage
+
+Set the `cfg.cuda` flag in `model.py` to `False`. 
+
 ### GPU Acceleration
 
-Switching from the CPU to the GPU is quite easy and will result in a massive speed-up. Just set the `cfg.cuda` flag in `model.py`. Make sure you installed the CUDA Framework from Nvidia. 
+Switching from the CPU to the GPU is quite easy and will result in a massive speed-up. Just set the `cfg.cuda` flag in `model.py` to `True`. Make sure you installed the CUDA Framework from Nvidia. If CUDA runs out of memory, reduce the batch size until it fits into your video memory.
