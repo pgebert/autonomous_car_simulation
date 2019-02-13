@@ -20,7 +20,7 @@ import copy
 from PIL import Image
 
 from dataloader import SimulationDataset
-import data_utils as du
+import utils as utils
 from logger import Logger
 
 # Surpress traceback in case of user interrupt
@@ -94,21 +94,23 @@ class Model():
     def loadData(self):       
         
         trainset = SimulationDataset("train", transforms=transforms.Compose([                
-                # du.RandomResizedCrop(self.input_shape),
-                du.Rescale(self.input_shape),
-                du.RandomHorizontalFlip(),
-                du.ToTensor(),
-                du.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                # utils.RandomResizedCrop(self.input_shape),
+                utils.RandomCoose(['center', 'left', 'right']),
+                utils.Rescale(self.input_shape),
+                utils.RandomHorizontalFlip(),
+                utils.ToTensor(),
+                utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
-        weights = du.get_weights(trainset)
+        weights = utils.get_weights(trainset)
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
         self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
         # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=4)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
-                du.Rescale(self.input_shape),
-                du.ToTensor(),
-                du.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                utils.RandomCoose(['center']),
+                utils.Rescale(self.input_shape),
+                utils.ToTensor(),
+                utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
         self.testloader = torch.utils.data.DataLoader(testset, batch_size=self.cfg.batch_size, shuffle=False, num_workers=4)
 

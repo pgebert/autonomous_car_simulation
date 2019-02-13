@@ -68,6 +68,23 @@ class RandomHorizontalFlip(object):
             target = - target  
         return {'image': image, 'target': target}
 
+class RandomCoose(object):
+    """Choose one of the given views
+    Args:
+        options (list od String): Alternative views center, left, right
+    """
+
+    def __init__(self, options):
+        self.options = options
+        assert(len(options) > 0)
+ 
+    def __call__(self, sample):
+        image, target = sample['image'], sample['target']
+        choice = self.options[random.randint(0, len(self.options)-1)]
+        views = {'center': 0, 'left': 1, 'right': 2}
+        view_id = views.get(choice, 0)
+        return {'image': image[view_id], 'target': target}     
+
 class Normalize(object):
     """Normalize the image in a sample: y = (x - mean) / std
     Args:

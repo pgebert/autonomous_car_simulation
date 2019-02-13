@@ -26,18 +26,18 @@ class SimulationDataset(Dataset):
         # First column contains the middle image paths
         piv = int(4 / 5 * len(self.data))
         if (set == "test"):
-            self.image_paths = np.asarray(self.data.iloc[:piv, 0])
+            self.image_paths = np.asarray(self.data.iloc[:piv, 0:3])
         else:
-            self.image_paths = np.asarray(self.data.iloc[piv:, 0])
+            self.image_paths = np.asarray(self.data.iloc[piv:, 0:3])
         # Fourth column contains the steering angle
         self.targets = np.asarray(self.data.iloc[:, 3])
 
     def __getitem__(self, index):
 
          # Get image name from the pandas df
-        image_path = self.image_paths[index]
+        image_paths = self.image_paths[index]
         # Open image
-        image = Image.open(image_path)   
+        image = [Image.open(image_paths[i]) for i in range(3)]
         target = self.targets[index]     
 
         sample = {'image': image, 'target': target}
