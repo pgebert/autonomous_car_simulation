@@ -3,6 +3,9 @@ import torch
 from torchvision import transforms
 import torchvision.transforms.functional as tf
 import random
+from PIL import Image
+
+IMAGE_HEIGHT, IMAGE_WIDTH = 160, 320
 
 def get_weights(dataset):
 
@@ -18,6 +21,52 @@ def get_weights(dataset):
     # weights = [ 0.01 if target == 0 else 1.0 for target in targets]
 
     return weights
+
+class Preprocess(object):
+    """Preprocess the image by cropping, resizing and converting color channels.
+
+    Args:
+        output_size (tuple or int): Desired output size. 
+    """
+
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        self.output_size = output_size
+    
+    def  __call__(self, sample):
+        sample = self.crop(sample)
+        sample = self.resize(sample)
+        sample = self.rgb2YCbCr(sample)
+        return sample
+
+
+    """
+    Crop the image by removing the sky and car front from the image 
+    """
+    def crop(self, sample):
+        image, target = sample['image'], sample['target']     
+        w, h = image.size  
+        image.crop((0, 60, w, h-25))
+        # print(image.size)
+        return {'image': image, 'target': target}
+
+    """
+    Resize the image to the given output size
+    """
+    def resize(self, sample):
+        image, target = sample['image'], sample['target']       
+        h, w = self.output_size
+        image.thumbnail((w, h), Image.ANTIALIAS)
+        return {'image': image, 'target': target}
+
+    """
+    Convert the image from RGB to YCbCr color model
+    """
+    def rgb2YCbCr(self, sample):
+        image, target = sample['image'], sample['target']       
+        image.convert('YCbCr')
+        return {'image': image, 'target': target}
+
 
 class Rescale(object):
     """Rescale the image in a sample to a given size.
@@ -81,9 +130,15 @@ class RandomCoose(object):
     def __call__(self, sample):
         image, target = sample['image'], sample['target']
         choice = self.options[random.randint(0, len(self.options)-1)]
-        views = {'center': 0, 'left': 1, 'right': 2}
-        view_id = views.get(choice, 0)
-        return {'image': image[view_id], 'target': target}     
+        if (choice == 'left'):
+            image = image[1]
+            target += 0.2
+        elif (choice == 'right'):
+            image = image[2]
+            target -= 0.2
+        else:
+            image = image[0]
+        return {'image': image, 'target': target}     
 
 class Normalize(object):
     """Normalize the image in a sample: y = (x - mean) / std

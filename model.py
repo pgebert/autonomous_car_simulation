@@ -66,13 +66,14 @@ class Model():
 
     def __init__(self):
 
-        self.input_shape = (160, 320)
+        self.input_shape = (utils.IMAGE_HEIGHT, utils.IMAGE_WIDTH)
         
         cfg = type('', (), {})()
         cfg.log_dir = "."
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
+        cfg.clean_sart = True
         cfg.batch_size = 100
         cfg.test_rate = 1
         cfg.test_epochs = 1
@@ -82,6 +83,10 @@ class Model():
 
         self.cfg = cfg
         self.log = Logger(cfg)
+
+        # Clean start 
+        if os.path.exists(os.path.join(cfg.log_dir, cfg.log_file)) and cfg.clean_sart:
+            os.remove(os.path.join(cfg.log_dir, cfg.log_file))
 
         self.net = Net()
         if (self.cfg.cuda):
@@ -93,22 +98,25 @@ class Model():
 
     def loadData(self):       
         
-        trainset = SimulationDataset("train", transforms=transforms.Compose([                
+        trainset = SimulationDataset("train", transforms=transforms.Compose([                 
+                utils.RandomCoose(['center']),          
+                utils.Preprocess(self.input_shape),
+                # utils.RandomCoose(['center', 'left', 'right']),
                 # utils.RandomResizedCrop(self.input_shape),
-                utils.RandomCoose(['center', 'left', 'right']),
-                utils.Rescale(self.input_shape),
+                # utils.Rescale(self.input_shape),
                 utils.RandomHorizontalFlip(),
                 utils.ToTensor(),
                 utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
         weights = utils.get_weights(trainset)
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
-        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=4)
+        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
+        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=4)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
-                utils.Rescale(self.input_shape),
+                utils.Preprocess(self.input_shape),
+                # utils.Rescale(self.input_shape),
                 utils.ToTensor(),
                 utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
@@ -253,12 +261,14 @@ class Model():
         print('Starting Prediction')
 
         composed=transforms.Compose([
-            transforms.Resize(self.input_shape),
-            transforms.CenterCrop(self.input_shape),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            utils.Preprocess(self.input_shape),
+            utils.ToTensor(),
+            utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
-        inputs = composed(image)
+        # Target gets discareded
+        sample = {'image': image, 'target': 0}
+        sample  = composed(sample)
+        inputs = sample['image']
         # Add single batch diemension
         inputs = inputs.unsqueeze(0)
 
