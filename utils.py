@@ -39,7 +39,6 @@ class Preprocess(object):
         sample = self.rgb2YCbCr(sample)
         return sample
 
-
     """
     Crop the image by removing the sky and car front from the image 
     """
@@ -67,44 +66,54 @@ class Preprocess(object):
         image.convert('YCbCr')
         return {'image': image, 'target': target}
 
-
-class Rescale(object):
-    """Rescale the image in a sample to a given size.
-
-    Args:
-        output_size (tuple or int): Desired output size. If tuple, output is
-            matched to output_size. If int, smaller of image edges is matched
-            to output_size keeping aspect ratio the same.
+class RandomTranslate(object):
+    """
+    Randomly shift the image virtially and horizontally (translation).
     """
 
-    def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
-        self.output_size = output_size
+    def __init__(self, range_x, range_y):
+        self.range_x = range_x
+        self.range_y = range_y 
 
     def __call__(self, sample):
-        image, target = sample['image'], sample['target']        
-        image = tf.resize(image, self.output_size)
-        # Ensure the output size
-        image = tf.center_crop(image, self.output_size)
+        image, target = sample['image'], sample['target']  
+        trans_x = self.range_x * (random.random() - 0.5)
+        trans_y = self.range_y * (random.random() - 0.5)
+        target += trans_x * 0.002
+        image = tf.affine(image, 0, (trans_x, trans_y), 1.0, 0)
         return {'image': image, 'target': target}
 
-class RandomResizedCrop(object):
-    """Crop the given PIL Image to random size and aspect ratio.
-
-    Args:
-        output_size (tuple or int): Desired output size. If tuple, output is
-            matched to output_size. If int, smaller of image edges is matched
-            to output_size keeping aspect ratio the same.
+class RandomBrightness(object):
     """
-
-    def __init__(self, output_size):
-        assert isinstance(output_size, (int, tuple))
-        self.output_size = output_size
-
+    Randomly adjust brightness of the image.
+    """
     def __call__(self, sample):
-        image, target = sample['image'], sample['target']    
-        resizeCrop = transforms.RandomResizedCrop(self.output_size[1])    
-        image = resizeCrop(image)
+        image, target = sample['image'], sample['target']  
+        # 0 gives a black image, 1 gives the original image while 2 increases the brightness by a factor of 2.
+        ratio = (random.random() + 0.5)
+        image = tf.adjust_brightness(image, ratio)
+        return {'image': image, 'target': target}
+
+class RandomContrast(object):
+    """
+    Randomly adjust contrast of the image.
+    """
+    def __call__(self, sample):
+        image, target = sample['image'], sample['target']  
+        # 0 gives a solid gray image, 1 gives the original image while 2 increases the contrast by a factor of 2.
+        ratio = (random.random() + 0.5)
+        image = tf.adjust_contrast(image, ratio)
+        return {'image': image, 'target': target}
+
+class RandomHue(object):
+    """
+    Randomly adjust hue of the image - image is converted to HSV and back.
+    """
+    def __call__(self, sample):
+        image, target = sample['image'], sample['target']  
+        # Should be in [-0.5, 0.5].
+        ratio = (random.random() + 0.5)
+        image = tf.adjust_hue(image, ratio)
         return {'image': image, 'target': target}
 
 class RandomHorizontalFlip(object):

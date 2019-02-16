@@ -99,11 +99,12 @@ class Model():
     def loadData(self):       
         
         trainset = SimulationDataset("train", transforms=transforms.Compose([                 
-                utils.RandomCoose(['center']),          
+                utils.RandomCoose(['center', 'left', 'right']),          
                 utils.Preprocess(self.input_shape),
-                # utils.RandomCoose(['center', 'left', 'right']),
-                # utils.RandomResizedCrop(self.input_shape),
-                # utils.Rescale(self.input_shape),
+                utils.RandomTranslate(100, 10),
+                utils.RandomBrightness(),
+                # uitls.RandomContrast(),
+                # uitls.RandomHue(),
                 utils.RandomHorizontalFlip(),
                 utils.ToTensor(),
                 utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -116,7 +117,6 @@ class Model():
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
                 utils.Preprocess(self.input_shape),
-                # utils.Rescale(self.input_shape),
                 utils.ToTensor(),
                 utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
