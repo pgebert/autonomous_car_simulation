@@ -75,7 +75,7 @@ class Model():
         cfg.auto_plot = True
         cfg.clean_sart = True
         cfg.batch_size = 100
-        cfg.test_rate = 1
+        cfg.test_rate = 5
         cfg.test_epochs = 1
         cfg.train_epochs = 200
         cfg.optimizer = 'sgd'
@@ -103,8 +103,8 @@ class Model():
                 utils.Preprocess(self.input_shape),
                 utils.RandomTranslate(100, 10),
                 utils.RandomBrightness(),
-                # uitls.RandomContrast(),
-                # uitls.RandomHue(),
+                utils.RandomContrast(),
+                utils.RandomHue(),
                 utils.RandomHorizontalFlip(),
                 utils.ToTensor(),
                 utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])

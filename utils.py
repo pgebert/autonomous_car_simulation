@@ -112,7 +112,7 @@ class RandomHue(object):
     def __call__(self, sample):
         image, target = sample['image'], sample['target']  
         # Should be in [-0.5, 0.5].
-        ratio = (random.random() + 0.5)
+        ratio = (random.random() - 0.5)
         image = tf.adjust_hue(image, ratio)
         return {'image': image, 'target': target}
 
