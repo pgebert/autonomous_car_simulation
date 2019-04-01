@@ -5,20 +5,20 @@ import torchvision.transforms.functional as tf
 import random
 from PIL import Image
 
-IMAGE_HEIGHT, IMAGE_WIDTH = 160, 320
+IMAGE_HEIGHT, IMAGE_WIDTH = 80, 160
 
 def get_weights(dataset):
 
     # Get targets
     targets = [dataset.__getitem__(i)[1] for i in range(dataset.__len__())]
     # Count zero value appearance
-    count_zeros = len(list(filter(lambda x: x == 0, targets))) 
+    count_zeros = len(list(filter(lambda x: x == 0.0, targets))) 
     # Weights - inverted possibilities
     weights_zeros = float(len(targets) - count_zeros)/len(targets)
     weights_others = float(count_zeros)/len(targets)
-    # Weight for each sample                               
-    weights = [ weights_zeros if target == 0 else weights_others for target in targets]
-    # weights = [ 0.01 if target == 0 else 1.0 for target in targets]
+    # Weight for each sample                           
+    # weights = [ weights_zeros if target == 0 else weights_others for target in targets]
+    weights = [ 0.01 if target == 0 else 1.0 for target in targets]
 
     return weights
 
@@ -123,7 +123,8 @@ class RandomHorizontalFlip(object):
         image, target = sample['image'], sample['target']
         if random.random() > 0.5:
             image = tf.hflip(image)
-            target = - target  
+            if target != 0:
+                target = - target  
         return {'image': image, 'target': target}
 
 class RandomCoose(object):
@@ -147,7 +148,17 @@ class RandomCoose(object):
             target -= 0.2
         else:
             image = image[0]
-        return {'image': image, 'target': target}     
+        return {'image': image, 'target': target}   
+
+class RandomNoise(object):
+    """
+    Randomly adds noise to the target vector
+    """
+
+    def __call__(self, sample):
+        image, target = sample['image'], sample['target']  
+        target += (random.random() - 0.5) * 0.001
+        return {'image': image, 'target': target}
 
 class Normalize(object):
     """Normalize the image in a sample: y = (x - mean) / std

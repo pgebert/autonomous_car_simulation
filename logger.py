@@ -38,11 +38,8 @@ class Logger:
             data - tuple containing the epoch and the loss value
         """
         log_path = os.path.join(self.cfg.log_dir, self.cfg.log_file)
-        # Add a new list for every split
-        if data[0] == 1:
-            self.data[-1]["loss"].append([])
 
-        self.data[-1]["loss"][-1].append(data)
+        self.data[-1]["loss"].append(data)
         with open(log_path, 'w+') as jsonFile:
             ujson.dump(self.data, jsonFile)
         
@@ -60,10 +57,8 @@ class Logger:
             data - tuple containing the epoch and the test accurancy
         """
         log_path = os.path.join(self.cfg.log_dir, self.cfg.log_file)
-        if data[0] == self.cfg.test_rate:
-            self.data[-1]["test"].append([])
 
-        self.data[-1]["test"][-1].append(data)
+        self.data[-1]["test"].append(data)
         with open(log_path, 'w+') as jsonFile:
             ujson.dump(self.data, jsonFile)
 

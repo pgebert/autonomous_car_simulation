@@ -7,8 +7,12 @@ from torch.utils.data import Dataset
 
 from torchvision import transforms
 
+import torchvision.transforms.functional as F
+
 import pandas as pd
 from PIL import Image
+
+import matplotlib.pyplot as plt
 
 class SimulationDataset(Dataset):
     """Dataset wrapping input and target tensors for the driving simulation dataset.
@@ -26,11 +30,11 @@ class SimulationDataset(Dataset):
         # First column contains the middle image paths
         piv = int(4 / 5 * len(self.data))
         if (set == "test"):
-            self.image_paths = np.asarray(self.data.iloc[:piv, 0:3])
+            self.image_paths = np.array(self.data.iloc[:piv, 0:3])
         else:
-            self.image_paths = np.asarray(self.data.iloc[piv:, 0:3])
+            self.image_paths = np.array(self.data.iloc[piv:, 0:3])
         # Fourth column contains the steering angle
-        self.targets = np.asarray(self.data.iloc[:, 3])
+        self.targets = np.array(self.data.iloc[:, 3])
 
     def __getitem__(self, index):
 
@@ -42,13 +46,14 @@ class SimulationDataset(Dataset):
 
         sample = {'image': image, 'target': target}
 
-        # Get target value
-        # target = torch.tensor(float(self.targets[index]))
-
         # If the transform variable is not empty
         # then it applies the operations in the transforms with the order that it is created.
         if self.transforms is not None:
             sample = self.transforms(sample)
+
+        # plt.imshow(F.to_pil_image(sample['image']))
+        # plt.title(str(sample['target']))
+        # plt.show()
         
         return sample['image'], sample['target']
 

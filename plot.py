@@ -38,39 +38,33 @@ def plot(data=None, out_path=None):
 
     # Loop over different configurations
     for i in range(len(data)):
-        # Loop over different splits
-        for j in range(len(data[i]["loss"])):
+        x_loss, y_loss = [], []
+        for val in data[i]["loss"]:
+                x_loss.append(val[0])
+                y_loss.append(val[1])
+        # Plot loss
+        plotData.append(go.Scatter(
+        x = x_loss,
+        y = y_loss,
+        # mode = 'lines',
+        mode = 'lines+markers',
+        # mode = 'markers',
+        name = data[i]["cfg"] + " - Train"
+        ))
 
-            x_loss, y_loss = [], []
-            for val in data[i]["loss"][j]:
-                    x_loss.append(val[0])
-                    y_loss.append(val[1])
-            # Plot loss
-            plotData.append(go.Scatter(
-            x = x_loss,
-            y = y_loss,
-            # mode = 'lines',
-            mode = 'lines+markers',
-            # mode = 'markers',
-            name = data[i]["cfg"] + " - Train"
-            ))
-
-         # Loop over different splits
-        for j in range(len(data[i]["test"])):
-
-            x_test, y_test = [], []
-            for val in data[i]["test"][j]:
-                    x_test.append(val[0])
-                    y_test.append(val[1])        
-            # Plot test
-            plotData.append(go.Scatter(
-            x = x_test,
-            y = y_test,
-            # mode = 'lines',
-            mode = 'lines+markers',
-            # mode = 'markers',
-            name = data[i]["cfg"] + " - Test"
-            ))
+        x_test, y_test = [], []
+        for val in data[i]["test"]:
+                x_test.append(val[0])
+                y_test.append(val[1])        
+        # Plot test
+        plotData.append(go.Scatter(
+        x = x_test,
+        y = y_test,
+        # mode = 'lines',
+        mode = 'lines+markers',
+        # mode = 'markers',
+        name = data[i]["cfg"] + " - Test"
+        ))
 
     # py.offline.plot(plotData, auto_open=False)
     # py.offline.plot(plotData, image='png', auto_open=False, filename='./plot.html')    

@@ -39,7 +39,7 @@ class Net(nn.Module):
         self.conv4 = nn.Conv2d(48, 64, 3)
         self.conv5 = nn.Conv2d(64, 64, 3)
         self.drop = nn.Dropout(p=0.5)
-        self.fc1 = nn.Linear(64 * 13 * 33, 100)
+        self.fc1 = nn.Linear(64 * 3 * 13, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
         self.fc4 = nn.Linear(10, 1)
@@ -50,8 +50,8 @@ class Net(nn.Module):
         x = F.elu(self.conv3(x))
         x = F.elu(self.conv4(x))
         x = F.elu(self.conv5(x))
-        x = self.drop(x)
-        x = x.view(-1, 64 * 13 * 33)
+        # x = self.drop(x)
+        x = x.view(-1, 64 * 3 * 13)
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
@@ -74,11 +74,11 @@ class Model():
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
         cfg.clean_sart = True
-        cfg.batch_size = 100
-        cfg.test_rate = 5
+        cfg.batch_size = 50
+        cfg.test_rate = 10
         cfg.test_epochs = 1
-        cfg.train_epochs = 200
-        cfg.optimizer = 'sgd'
+        cfg.train_epochs = 50000
+        cfg.optimizer = 'adam'
         cfg.cuda = True
 
         self.cfg = cfg
@@ -99,28 +99,29 @@ class Model():
     def loadData(self):       
         
         trainset = SimulationDataset("train", transforms=transforms.Compose([                 
-                utils.RandomCoose(['center', 'left', 'right']),          
+                utils.RandomCoose(['center']),          
                 utils.Preprocess(self.input_shape),
-                utils.RandomTranslate(100, 10),
-                utils.RandomBrightness(),
-                utils.RandomContrast(),
-                utils.RandomHue(),
+                # utils.RandomNoise(),
+                # utils.RandomTranslate(100, 10),
+                # utils.RandomBrightness(),
+                # utils.RandomContrast(),
+                # utils.RandomHue(),
                 utils.RandomHorizontalFlip(),
                 utils.ToTensor(),
-                utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
         weights = utils.get_weights(trainset)
         sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
-        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=4)
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=4)
+        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=16, pin_memory=True)
+        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
                 utils.Preprocess(self.input_shape),
                 utils.ToTensor(),
-                utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
             ]))
-        self.testloader = torch.utils.data.DataLoader(testset, batch_size=self.cfg.batch_size, shuffle=False, num_workers=4)
+        self.testloader = torch.utils.data.DataLoader(testset, batch_size=self.cfg.batch_size, shuffle=False, num_workers=0, pin_memory=True)
 
         # Assert trainset and testset are different
         # assert(not bool(set(trainset.__get_samples__()).intersection(testset.__get_samples__())))
@@ -149,14 +150,17 @@ class Model():
         #set train mode
         self.net.train()
 
-        criterion = nn.MSELoss()
+        if (self.cfg.cuda):
+            criterion = nn.MSELoss().cuda()
+        else:
+            criterion = nn.MSELoss()
 
         if self.cfg.optimizer == 'adam':
             optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
         elif self.cfg.optimizer == 'adadelta':
             optimizer = optim.Adadelta(selfnet.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
         else:
-            optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.0, dampening=0.0)
+            optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.01, dampening=0.0)
 
 
         for epoch in range(self.cfg.train_epochs):  # loop over the dataset multiple times
@@ -169,7 +173,7 @@ class Model():
 
                 # wrap them in Variable
                 if (self.cfg.cuda):
-                    inputs, labels = Variable(inputs.cuda(async=True)), Variable(labels.cuda(async=True))
+                    inputs, labels = Variable(inputs.cuda(non_blocking=True)), Variable(labels.cuda(non_blocking=True))
                 else:
                     inputs, labels = Variable(inputs), Variable(labels)
 
@@ -178,7 +182,7 @@ class Model():
 
                 # forward + backward + optimize
                 if (self.cfg.cuda):
-                    outputs = self.net(inputs).cuda(async=True)
+                    outputs = self.net(inputs).cuda(non_blocking=True)
                 else:
                     outputs = self.net(inputs)
 
@@ -189,20 +193,21 @@ class Model():
                 optimizer.step()
 
                 running_loss += loss.item()
+                del loss
 
                 # print statistics
-                if i % 5 == 4:    # print every 5 mini-batches
-                    self.log.logLoss((epoch+1, running_loss / (i+1)))
+                if i % 5 == 4:    # print every 5 mini-batches                    
                     print('[%d, %5d] loss: %.6f' % (epoch + 1, i + 1, running_loss / (i+1)))
 
             train_loss = running_loss / len(self.trainloader) 
             print('MSE of the network on the traintset: %.6f' % (train_loss))
 
             if ((epoch + 1) % self.cfg.test_rate == 0):
+                    self.log.logLoss((epoch+1, train_loss))
                     tmp_res = self.test()
                     self.log.logTest((epoch+1, tmp_res))
                     # Check test result over all splits to save best model
-                    if (tmp_res < test_res or test_res == 0):
+                    if (tmp_res < test_res or test_res == 0 or True):
                         self.saveModel()
                         test_res = tmp_res
                         best_epoch = epoch+1
@@ -217,25 +222,30 @@ class Model():
         # set test mode
         self.net.eval()
 
-        criterion = nn.MSELoss()
+        if (self.cfg.cuda):
+            criterion = nn.MSELoss().cuda()
+        else:
+            criterion = nn.MSELoss()
+
         test_loss, running_loss = 0, 0
 
         for epoch in range(self.cfg.test_epochs):  # loop over the dataset multiple times
             for data in self.testloader:
                 inputs, labels = data
                 if (self.cfg.cuda):
-                    inputs, labels = Variable(inputs.cuda(async=True)), Variable(labels.cuda(async=True))
+                    inputs, labels = Variable(inputs.cuda(non_blocking=True)), Variable(labels.cuda(non_blocking=True))
                 else:
                     inputs, labels = Variable(inputs), Variable(labels)
 
                 if (self.cfg.cuda):
-                    outputs = self.net(inputs).cuda(async=True)
+                    outputs = self.net(inputs).cuda(non_blocking=True)
                 else:
                     outputs = self.net(inputs)
 
                 # Compute mean squared error
                 loss = criterion(outputs, labels)
                 running_loss += loss.item()
+                del loss
 
         if (self.cfg.test_epochs > 0):
             test_loss = running_loss / (len(self.testloader) * self.cfg.test_epochs) 
@@ -263,7 +273,7 @@ class Model():
         composed=transforms.Compose([
             utils.Preprocess(self.input_shape),
             utils.ToTensor(),
-            utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
         # Target gets discareded
         sample = {'image': image, 'target': 0}
@@ -273,12 +283,12 @@ class Model():
         inputs = inputs.unsqueeze(0)
 
         if (self.cfg.cuda):
-            inputs = Variable(inputs.cuda(async=True))
+            inputs = Variable(inputs.cuda(non_blocking=True))
         else:
             inputs = Variable(inputs)
 
         if (self.cfg.cuda):
-            outputs = self.net(inputs).cuda(async=True)
+            outputs = self.net(inputs).cuda(non_blocking=True)
         else:
             outputs = self.net(inputs)
 
