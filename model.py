@@ -26,6 +26,8 @@ from logger import Logger
 # Surpress traceback in case of user interrupt
 signal.signal(signal.SIGINT, lambda x,y: sys.exit(0))
 
+class Struct(object): pass
+
 ########################################################################
 # Define the network
 # ^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +70,7 @@ class Model():
 
         self.input_shape = (utils.IMAGE_HEIGHT, utils.IMAGE_WIDTH)
         
-        cfg = type('', (), {})()
+        cfg = Struct()
         cfg.log_dir = "."
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
@@ -79,7 +81,7 @@ class Model():
         cfg.test_epochs = 1
         cfg.train_epochs = 50000
         cfg.optimizer = 'adam'
-        cfg.cuda = True
+        cfg.cuda = False
 
         self.cfg = cfg
         self.log = Logger(cfg)
@@ -158,7 +160,7 @@ class Model():
         if self.cfg.optimizer == 'adam':
             optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
         elif self.cfg.optimizer == 'adadelta':
-            optimizer = optim.Adadelta(selfnet.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
+            optimizer = optim.Adadelta(self.net.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
         else:
             optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.01, dampening=0.0)
 
@@ -265,7 +267,7 @@ class Model():
         self.net.eval()
 
         if (not preloaded):
-            loadModel()
+            self.loadModel()
             print('Loaded Model')
 
         print('Starting Prediction')
