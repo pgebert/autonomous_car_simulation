@@ -4,6 +4,7 @@
 log.json
 plot.html
 *.pptx
+*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
