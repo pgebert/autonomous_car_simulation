@@ -36,24 +36,29 @@ class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(3, 24, 5, stride=(2, 2))
+        self.pool = nn.MaxPool2d(2, 2)
         self.conv2 = nn.Conv2d(24, 36, 5, stride=(2, 2))
         self.conv3 = nn.Conv2d(36, 48, 5, stride=(2, 2))
-        self.conv4 = nn.Conv2d(48, 64, 3)
-        self.conv5 = nn.Conv2d(64, 64, 3)
+        # self.conv4 = nn.Conv2d(48, 64, 3)
+        # self.conv5 = nn.Conv2d(64, 64, 3)
         self.drop = nn.Dropout(p=0.5)
-        self.fc1 = nn.Linear(64 * 3 * 13, 100)
+        # self.fc1 = nn.Linear(64 * 3 * 13, 100)
+        self.fc1 = nn.Linear(48 * 2 * 7, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
         self.fc4 = nn.Linear(10, 1)
 
     def forward(self, x):
-        x = F.elu(self.conv1(x))
+        x = F.elu(self.conv1(x))    
+        x = self.pool(x)    
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))
-        x = F.elu(self.conv4(x))
-        x = F.elu(self.conv5(x))
-        # x = self.drop(x)
-        x = x.view(-1, 64 * 3 * 13)
+        # x = F.elu(self.conv4(x))
+        # x = F.elu(self.conv5(x))
+        x = self.drop(x)
+        # print(x.size())
+        # x = x.view(-1, 64 * 3 * 13)
+        x = x.view(-1, 48 * 2 * 7)
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
@@ -75,7 +80,7 @@ class Model():
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
-        cfg.clean_sart = True
+        cfg.clean_start = True
         cfg.batch_size = 50
         cfg.test_rate = 10
         cfg.test_epochs = 1
@@ -87,7 +92,7 @@ class Model():
         self.log = Logger(cfg)
 
         # Clean start 
-        if os.path.exists(os.path.join(cfg.log_dir, cfg.log_file)) and cfg.clean_sart:
+        if os.path.exists(os.path.join(cfg.log_dir, cfg.log_file)) and cfg.clean_start:
             os.remove(os.path.join(cfg.log_dir, cfg.log_file))
 
         self.net = Net()
@@ -158,7 +163,8 @@ class Model():
             criterion = nn.MSELoss()
 
         if self.cfg.optimizer == 'adam':
-            optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
+            optimizer = optim.Adam(self.net.parameters(), lr=0.0005)
+            # optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
         elif self.cfg.optimizer == 'adadelta':
             optimizer = optim.Adadelta(self.net.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
         else:
