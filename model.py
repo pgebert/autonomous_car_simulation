@@ -35,35 +35,69 @@ class Struct(object): pass
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 24, 5, stride=(2, 2))
-        self.pool = nn.MaxPool2d(2, 2)
+        
+        self.conv1 = nn.Conv2d(3, 24, 5, stride=(2, 2))        
         self.conv2 = nn.Conv2d(24, 36, 5, stride=(2, 2))
         self.conv3 = nn.Conv2d(36, 48, 5, stride=(2, 2))
-        # self.conv4 = nn.Conv2d(48, 64, 3)
-        # self.conv5 = nn.Conv2d(64, 64, 3)
+        self.conv4 = nn.Conv2d(48, 64, 3)
+        self.conv5 = nn.Conv2d(64, 64, 3)
+        self.pool = nn.MaxPool2d(2, 2)
         self.drop = nn.Dropout(p=0.5)
-        # self.fc1 = nn.Linear(64 * 3 * 13, 100)
-        self.fc1 = nn.Linear(48 * 2 * 7, 100)
+        self.fc1 = nn.Linear(64 * 3 * 13, 100)
         self.fc2 = nn.Linear(100, 50)
         self.fc3 = nn.Linear(50, 10)
         self.fc4 = nn.Linear(10, 1)
 
     def forward(self, x):
-        x = F.elu(self.conv1(x))    
-        x = self.pool(x)    
+        x = F.elu(self.conv1(x))           
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))
-        # x = F.elu(self.conv4(x))
-        # x = F.elu(self.conv5(x))
+        x = F.elu(self.conv4(x))
+        x = F.elu(self.conv5(x))
         x = self.drop(x)
         # print(x.size())
-        # x = x.view(-1, 64 * 3 * 13)
-        x = x.view(-1, 48 * 2 * 7)
+        x = x.view(-1, 64 * 3 * 13)
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
         x = self.fc4(x)
         return x
+
+# class Net(nn.Module):
+#     def __init__(self):
+#         super(Net, self).__init__()
+        
+#         self.conv1 = nn.Conv2d(3, 24, 3)        
+#         self.conv2 = nn.Conv2d(24, 36, 3)
+#         self.conv3 = nn.Conv2d(36, 48, 3)
+#         self.conv4 = nn.Conv2d(48, 64, 3)
+#         self.conv5 = nn.Conv2d(64, 64, 3)
+#         self.pool = nn.MaxPool2d(2, 2)
+#         self.drop = nn.Dropout(p=0.5)
+#         self.fc1 = nn.Linear(64 * 4 * 14, 20000)
+#         self.fc2 = nn.Linear(20000, 10000)
+#         self.fc3 = nn.Linear(10000, 1000)
+#         self.fc4 = nn.Linear(1000, 10)
+#         self.fc5 = nn.Linear(10, 1)
+
+#     def forward(self, x):
+#         x = F.elu(self.conv1(x))
+#         x = self.pool(x)           
+#         x = F.elu(self.conv2(x))
+#         x= self.pool(x)
+#         x = F.elu(self.conv3(x))
+#         x= self.pool(x)
+#         x = F.elu(self.conv4(x))
+#         x = F.elu(self.conv5(x))
+#         x = self.drop(x)
+#         # print(x.size())
+#         x = x.view(-1, 64 * 4 * 14)
+#         x = F.elu(self.fc1(x))
+#         x = F.elu(self.fc2(x))
+#         x = F.elu(self.fc3(x))
+#         x = F.elu(self.fc4(x))
+#         x = self.fc5(x)
+#         return x
 
 class Model():    
 
@@ -80,7 +114,7 @@ class Model():
         cfg.log_file = "log.json"
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
-        cfg.clean_start = True
+        cfg.clean_start = False
         cfg.batch_size = 50
         cfg.test_rate = 10
         cfg.test_epochs = 1
@@ -106,27 +140,28 @@ class Model():
     def loadData(self):       
         
         trainset = SimulationDataset("train", transforms=transforms.Compose([                 
-                utils.RandomCoose(['center']),          
+                utils.RandomCoose(['center', 'right', 'left']),          
                 utils.Preprocess(self.input_shape),
+                utils.RandomResizedCrop(self.input_shape),
                 # utils.RandomNoise(),
                 # utils.RandomTranslate(100, 10),
-                # utils.RandomBrightness(),
+                utils.RandomBrightness(),
                 # utils.RandomContrast(),
                 # utils.RandomHue(),
                 utils.RandomHorizontalFlip(),
                 utils.ToTensor(),
-                # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                utils.Normalize([0.1, 0.4, 0.4], [0.9, 0.6, 0.5])
             ]))
-        weights = utils.get_weights(trainset)
-        sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=True)
-        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=16, pin_memory=True)
-        self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
+        # weights = utils.get_weights(trainset)
+        # sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
+        # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=0, pin_memory=True)
+        self.trainloader = torch.utils.data.DataLoader(trainset, shuffle=True, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
                 utils.Preprocess(self.input_shape),
                 utils.ToTensor(),
-                # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                utils.Normalize([0.1, 0.4, 0.4], [0.9, 0.6, 0.5])
             ]))
         self.testloader = torch.utils.data.DataLoader(testset, batch_size=self.cfg.batch_size, shuffle=False, num_workers=0, pin_memory=True)
 
@@ -163,12 +198,12 @@ class Model():
             criterion = nn.MSELoss()
 
         if self.cfg.optimizer == 'adam':
-            optimizer = optim.Adam(self.net.parameters(), lr=0.0005)
-            # optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
+            optimizer = optim.Adam(self.net.parameters(), lr=0.0001)
         elif self.cfg.optimizer == 'adadelta':
             optimizer = optim.Adadelta(self.net.parameters(), lr=1.0, rho=0.9, eps=1e-06, weight_decay=0)
         else:
-            optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.01, dampening=0.0)
+            optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9)
+            # optimizer = optim.SGD(self.net.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.01, dampening=0.0)
 
 
         for epoch in range(self.cfg.train_epochs):  # loop over the dataset multiple times
@@ -215,7 +250,7 @@ class Model():
                     tmp_res = self.test()
                     self.log.logTest((epoch+1, tmp_res))
                     # Check test result over all splits to save best model
-                    if (tmp_res < test_res or test_res == 0 or True):
+                    if (tmp_res < test_res or test_res == 0):
                         self.saveModel()
                         test_res = tmp_res
                         best_epoch = epoch+1
@@ -281,7 +316,7 @@ class Model():
         composed=transforms.Compose([
             utils.Preprocess(self.input_shape),
             utils.ToTensor(),
-            # utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            utils.Normalize([0.1, 0.4, 0.4], [0.9, 0.6, 0.5])
         ])
         # Target gets discareded
         sample = {'image': image, 'target': 0}

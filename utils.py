@@ -17,8 +17,8 @@ def get_weights(dataset):
     weights_zeros = float(len(targets) - count_zeros)/len(targets)
     weights_others = float(count_zeros)/len(targets)
     # Weight for each sample                           
-    # weights = [ weights_zeros if target == 0 else weights_others for target in targets]
-    weights = [ 0.01 if target == 0 else 1.0 for target in targets]
+    weights = [ weights_zeros if target == 0 else weights_others for target in targets]
+    # weights = [ 0.01 if target == 0 else 1.0 for target in targets]
 
     return weights
 
@@ -36,7 +36,7 @@ class Preprocess(object):
     def  __call__(self, sample):
         sample = self.crop(sample)
         sample = self.resize(sample)
-        sample = self.rgb2YCbCr(sample)
+        # sample = self.rgb2YCbCr(sample)
         return sample
 
     """
@@ -83,6 +83,23 @@ class RandomTranslate(object):
         image = tf.affine(image, 0, (trans_x, trans_y), 1.0, 0)
         return {'image': image, 'target': target}
 
+class RandomResizedCrop(object):
+    """
+    Crop the given image to random size and aspect ratio.
+
+    Args:
+        output_size (tuple or int): Desired output size. 
+    """
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        self.output_size = output_size
+
+    def __call__(self, sample):
+        image, target = sample['image'], sample['target']  
+        transform = transforms.RandomResizedCrop(self.output_size, scale=(0.8, 1.0), ratio=(0.9, 1.1), interpolation=2)
+        image = transform(image)
+        return {'image': image, 'target': target}
+
 class RandomBrightness(object):
     """
     Randomly adjust brightness of the image.
@@ -90,7 +107,7 @@ class RandomBrightness(object):
     def __call__(self, sample):
         image, target = sample['image'], sample['target']  
         # 0 gives a black image, 1 gives the original image while 2 increases the brightness by a factor of 2.
-        ratio = (random.random() + 0.5)
+        ratio = random.randint(8, 12) / 10
         image = tf.adjust_brightness(image, ratio)
         return {'image': image, 'target': target}
 

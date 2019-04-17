@@ -12,6 +12,8 @@ import torchvision.transforms.functional as F
 import pandas as pd
 from PIL import Image
 
+import utils as utils
+
 import matplotlib.pyplot as plt
 
 class SimulationDataset(Dataset):
@@ -27,12 +29,16 @@ class SimulationDataset(Dataset):
         self.transforms = transforms
 
         self.data = pd.read_csv(csv_path, header=None)
+
         # First column contains the middle image paths
         piv = int(4 / 5 * len(self.data))
         if (set == "test"):
             self.image_paths = np.array(self.data.iloc[:piv, 0:3])
         else:
             self.image_paths = np.array(self.data.iloc[piv:, 0:3])
+
+
+
         # Fourth column contains the steering angle
         self.targets = np.array(self.data.iloc[:, 3])
 
@@ -62,8 +68,21 @@ class SimulationDataset(Dataset):
 
 
 if  __name__ =='__main__':
-    dataset = SimulationDataset()
+
+    input_shape = (utils.IMAGE_HEIGHT, utils.IMAGE_WIDTH)
+    dataset = SimulationDataset("train", transforms=transforms.Compose([                 
+                utils.RandomCoose(['center']),          
+                utils.Preprocess(input_shape),
+                utils.RandomHorizontalFlip(),
+                utils.ToTensor(),
+                utils.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+            ]))
     print(dataset.__len__())
-    print(dataset.__getitem__(0))
+    print(dataset.__getitem__(0)[0].size())
+
+    for c in range(3):
+        for i in range(dataset.__len__()):
+            print(dataset.__getitem__(i)[c].mean())
+            print(dataset.__getitem__(i)[c].std())
     # print(dataset.__getitem__(0))
     # print(len(dataset.__get_annotations__()))
