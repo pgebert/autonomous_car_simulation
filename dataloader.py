@@ -31,16 +31,20 @@ class SimulationDataset(Dataset):
         self.data = pd.read_csv(csv_path, header=None)
 
         # First column contains the middle image paths
-        piv = int(4 / 5 * len(self.data))
-        if (set == "test"):
-            self.image_paths = np.array(self.data.iloc[:piv, 0:3])
-        else:
-            self.image_paths = np.array(self.data.iloc[piv:, 0:3])
-
-
-
         # Fourth column contains the steering angle
-        self.targets = np.array(self.data.iloc[:, 3])
+        start = 0
+        end = int(4 / 5 * len(self.data))
+
+        if (set == "test"):
+            start = end 
+            end = len(self.data)
+
+        self.image_paths = np.array(self.data.iloc[start:end, 0:3])
+        self.targets = np.array(self.data.iloc[start:end, 3])       
+        
+        bias = 0.05
+        self.image_paths = [image_path for image_path, target in zip(self.image_paths, self.targets) if abs(target) > bias]
+        self.targets = [target for target in self.targets if abs(target) > bias]
 
     def __getitem__(self, index):
 

@@ -120,7 +120,7 @@ class Model():
         cfg.test_epochs = 1
         cfg.train_epochs = 50000
         cfg.optimizer = 'adam'
-        cfg.cuda = False
+        cfg.cuda = True
 
         self.cfg = cfg
         self.log = Logger(cfg)
@@ -140,12 +140,12 @@ class Model():
     def loadData(self):       
         
         trainset = SimulationDataset("train", transforms=transforms.Compose([                 
-                utils.RandomCoose(['center', 'right', 'left']),          
+                utils.RandomCoose(['center']),          
                 utils.Preprocess(self.input_shape),
-                utils.RandomResizedCrop(self.input_shape),
+                # utils.RandomResizedCrop(self.input_shape),
                 # utils.RandomNoise(),
                 # utils.RandomTranslate(100, 10),
-                utils.RandomBrightness(),
+                # utils.RandomBrightness(),
                 # utils.RandomContrast(),
                 # utils.RandomHue(),
                 utils.RandomHorizontalFlip(),
@@ -155,7 +155,7 @@ class Model():
         # weights = utils.get_weights(trainset)
         # sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
         # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=0, pin_memory=True)
-        self.trainloader = torch.utils.data.DataLoader(trainset, shuffle=True, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
+        self.trainloader = torch.utils.data.DataLoader(trainset, shuffle=False, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
@@ -250,7 +250,7 @@ class Model():
                     tmp_res = self.test()
                     self.log.logTest((epoch+1, tmp_res))
                     # Check test result over all splits to save best model
-                    if (tmp_res < test_res or test_res == 0):
+                    if (tmp_res < test_res or test_res == 0 or True):
                         self.saveModel()
                         test_res = tmp_res
                         best_epoch = epoch+1

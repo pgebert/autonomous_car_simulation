@@ -36,7 +36,7 @@ class Preprocess(object):
     def  __call__(self, sample):
         sample = self.crop(sample)
         sample = self.resize(sample)
-        # sample = self.rgb2YCbCr(sample)
+        sample = self.rgb2YCbCr(sample)
         return sample
 
     """
