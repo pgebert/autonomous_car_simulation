@@ -40,11 +40,18 @@ model.loadModel()
 def telemetry(sid, data):
     if data:
         # The current steering angle of the car
-        steering_angle = 0        
+        steering_angle = float(data["steering_angle"])
+        # The current throttle of the car, how hard to push peddle
+        throttle = float(data["throttle"])
+        # The current speed of the car
+        speed = float(data["speed"])
+        # Compute steering angle of the car    
         image = Image.open(BytesIO(base64.b64decode(data["image"])))
         steering_angle = model.predict(image, preloaded=True)
-        # The current throttle of the car, how hard to push peddle
-        throttle = 0.2 - abs(steering_angle) / 0.4 * 0.15
+        # Compute speed
+        speed_target = 25 - abs(steering_angle) / 0.4 * 10
+        # throttle = 0.2 - abs(steering_angle) / 0.4 * 0.15
+        throttle = (speed_target - speed) * 0.1
 
         send_control(steering_angle, throttle)
 

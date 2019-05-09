@@ -15,6 +15,7 @@ from PIL import Image
 import utils as utils
 
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 
 class SimulationDataset(Dataset):
     """Dataset wrapping input and target tensors for the driving simulation dataset.
@@ -40,7 +41,10 @@ class SimulationDataset(Dataset):
             end = len(self.data)
 
         self.image_paths = np.array(self.data.iloc[start:end, 0:3])
-        self.targets = np.array(self.data.iloc[start:end, 3])       
+        self.targets = np.array(self.data.iloc[start:end, 3]) 
+
+        # Preprocess and filter data
+        self.targets = gaussian_filter1d(self.targets, 2)      
         
         bias = 0.03
         self.image_paths = [image_path for image_path, target in zip(self.image_paths, self.targets) if abs(target) > bias]
