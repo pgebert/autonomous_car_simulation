@@ -63,42 +63,6 @@ class Net(nn.Module):
         x = self.fc4(x)
         return x
 
-# class Net(nn.Module):
-#     def __init__(self):
-#         super(Net, self).__init__()
-        
-#         self.conv1 = nn.Conv2d(3, 24, 3)        
-#         self.conv2 = nn.Conv2d(24, 36, 3)
-#         self.conv3 = nn.Conv2d(36, 48, 3)
-#         self.conv4 = nn.Conv2d(48, 64, 3)
-#         self.conv5 = nn.Conv2d(64, 64, 3)
-#         self.pool = nn.MaxPool2d(2, 2)
-#         self.drop = nn.Dropout(p=0.5)
-#         self.fc1 = nn.Linear(64 * 4 * 14, 20000)
-#         self.fc2 = nn.Linear(20000, 10000)
-#         self.fc3 = nn.Linear(10000, 1000)
-#         self.fc4 = nn.Linear(1000, 10)
-#         self.fc5 = nn.Linear(10, 1)
-
-#     def forward(self, x):
-#         x = F.elu(self.conv1(x))
-#         x = self.pool(x)           
-#         x = F.elu(self.conv2(x))
-#         x= self.pool(x)
-#         x = F.elu(self.conv3(x))
-#         x= self.pool(x)
-#         x = F.elu(self.conv4(x))
-#         x = F.elu(self.conv5(x))
-#         x = self.drop(x)
-#         # print(x.size())
-#         x = x.view(-1, 64 * 4 * 14)
-#         x = F.elu(self.fc1(x))
-#         x = F.elu(self.fc2(x))
-#         x = F.elu(self.fc3(x))
-#         x = F.elu(self.fc4(x))
-#         x = self.fc5(x)
-#         return x
-
 class Model():    
 
     ########################################################################
@@ -115,12 +79,12 @@ class Model():
         cfg.plot_file = "plot.png"
         cfg.auto_plot = True
         cfg.clean_start = False
-        cfg.batch_size = 50
+        cfg.batch_size = 100
         cfg.test_rate = 10
         cfg.test_epochs = 1
-        cfg.train_epochs = 50000
+        cfg.train_epochs = 1000
         cfg.optimizer = 'adam'
-        cfg.cuda = False
+        cfg.cuda = True
 
         self.cfg = cfg
         self.log = Logger(cfg)
@@ -155,7 +119,7 @@ class Model():
         # weights = utils.get_weights(trainset)
         # sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights), replacement=False)
         # self.trainloader = torch.utils.data.DataLoader(trainset, batch_size=self.cfg.batch_size, sampler=sampler, num_workers=0, pin_memory=True)
-        self.trainloader = torch.utils.data.DataLoader(trainset, shuffle=False, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
+        self.trainloader = torch.utils.data.DataLoader(trainset, shuffle=True, batch_size=self.cfg.batch_size, num_workers=0, pin_memory=True)
 
         testset = SimulationDataset("test", transforms=transforms.Compose([
                 utils.RandomCoose(['center']),
@@ -349,6 +313,7 @@ class Model():
 
 if  __name__ =='__main__':
     model = Model()
+    # model.loadModel()
     model.loadData()
     model.train()
     # image_path = r'C:\Users\patri\Documents\Python Workspace\autonomous_car_simulation\IMG\center_2019_01_23_19_09_22_763.jpg'

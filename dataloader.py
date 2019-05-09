@@ -42,7 +42,7 @@ class SimulationDataset(Dataset):
         self.image_paths = np.array(self.data.iloc[start:end, 0:3])
         self.targets = np.array(self.data.iloc[start:end, 3])       
         
-        bias = 0.05
+        bias = 0.03
         self.image_paths = [image_path for image_path, target in zip(self.image_paths, self.targets) if abs(target) > bias]
         self.targets = [target for target in self.targets if abs(target) > bias]
 
