@@ -120,7 +120,7 @@ class Model():
         cfg.test_epochs = 1
         cfg.train_epochs = 50000
         cfg.optimizer = 'adam'
-        cfg.cuda = True
+        cfg.cuda = False
 
         self.cfg = cfg
         self.log = Logger(cfg)
@@ -144,7 +144,7 @@ class Model():
                 utils.Preprocess(self.input_shape),
                 # utils.RandomResizedCrop(self.input_shape),
                 # utils.RandomNoise(),
-                # utils.RandomTranslate(100, 10),
+                utils.RandomTranslate(10, 10),
                 # utils.RandomBrightness(),
                 # utils.RandomContrast(),
                 # utils.RandomHue(),

@@ -45,8 +45,7 @@ class Preprocess(object):
     def crop(self, sample):
         image, target = sample['image'], sample['target']     
         w, h = image.size  
-        image.crop((0, 60, w, h-25))
-        # print(image.size)
+        image = image.crop((0, 60, w, h-25))
         return {'image': image, 'target': target}
 
     """
@@ -55,7 +54,7 @@ class Preprocess(object):
     def resize(self, sample):
         image, target = sample['image'], sample['target']       
         h, w = self.output_size
-        image.thumbnail((w, h), Image.ANTIALIAS)
+        image = tf.resize(image, (h,w))
         return {'image': image, 'target': target}
 
     """
@@ -81,6 +80,11 @@ class RandomTranslate(object):
         trans_y = self.range_y * (random.random() - 0.5)
         target += trans_x * 0.002
         image = tf.affine(image, 0, (trans_x, trans_y), 1.0, 0)
+
+        w, h = image.size  
+        image = image.crop((self.range_x, self.range_y, w-self.range_x, h-self.range_y))
+        image = tf.resize(image, (h,w))
+
         return {'image': image, 'target': target}
 
 class RandomResizedCrop(object):
