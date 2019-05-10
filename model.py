@@ -82,9 +82,9 @@ class Model():
         cfg.batch_size = 100
         cfg.test_rate = 10
         cfg.test_epochs = 1
-        cfg.train_epochs = 1000
+        cfg.train_epochs = 400
         cfg.optimizer = 'adam'
-        cfg.cuda = True
+        cfg.cuda = False
 
         self.cfg = cfg
         self.log = Logger(cfg)
@@ -275,8 +275,6 @@ class Model():
             self.loadModel()
             print('Loaded Model')
 
-        print('Starting Prediction')
-
         composed=transforms.Compose([
             utils.Preprocess(self.input_shape),
             utils.ToTensor(),
@@ -299,8 +297,7 @@ class Model():
         else:
             outputs = self.net(inputs)
 
-        print('Finished Prediction')
-        print('Control tensor: %.6f ' % (outputs.item()))
+        # print('Control tensor: %.6f ' % (outputs.item()))
 
         # set train mode
         self.net.train()

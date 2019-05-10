@@ -25,8 +25,6 @@ from io import BytesIO
 # Load model
 from model import Model
 
-
-
 #initialize our server
 sio = socketio.Server()
 #our flask (web) app
@@ -52,6 +50,7 @@ def telemetry(sid, data):
         speed_target = 25 - abs(steering_angle) / 0.4 * 10
         # throttle = 0.2 - abs(steering_angle) / 0.4 * 0.15
         throttle = (speed_target - speed) * 0.1
+        print("network prediction -> (steering angle: {:.3f}, throttle: {:.3f})".format(steering_angle, throttle))
 
         send_control(steering_angle, throttle)
 
